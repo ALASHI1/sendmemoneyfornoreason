@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="send money for no reason logo">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22c55e"/>
+      <stop offset="1" stop-color="#15803d"/>
+    </linearGradient>
+    <filter id="soft" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+  </defs>
+
+  <!-- coin tile -->
+  <rect width="1024" height="1024" rx="232" fill="url(#g)"/>
+
+  <!-- subtle inner glow -->
+  <rect x="40" y="40" width="944" height="944" rx="200" fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="2"/>
+
+  <!-- "$?" — heavy geometric, white on green -->
+  <g fill="#ffffff" font-family="ui-rounded, -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'Segoe UI', system-ui, sans-serif" font-weight="900" letter-spacing="-40">
+    <text x="512" y="690" text-anchor="middle" font-size="640">$?</text>
+  </g>
+
+  <!-- tiny accent dot, bottom-right, hints at "send/click" -->
+  <circle cx="836" cy="850" r="22" fill="#bbf7d0"/>
+</svg>
