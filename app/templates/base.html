@@ -32,7 +32,10 @@
 <body class="min-h-screen text-ink-900 antialiased">
   <header class="sticky top-0 z-10 backdrop-blur bg-white/70 border-b border-ink-100">
     <div class="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between">
-      <a class="font-semibold tracking-tight" href="/">💸 send money</a>
+      <a class="flex items-center gap-2 font-semibold tracking-tight" href="/">
+        <img src="/static/logo-mark.svg" alt="" class="w-7 h-7 rounded-md" />
+        <span>send money</span>
+      </a>
       <nav class="flex items-center gap-5 text-sm text-ink-500">
         {% if user %}
           <a class="hover:text-ink-900" href="/u/{{ user.slug }}">my page</a>
