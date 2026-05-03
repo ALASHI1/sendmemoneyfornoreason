@@ -4,11 +4,13 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from .config import SECRET_KEY
 from .db import init_db
+from .uploads import UPLOAD_DIR, UPLOAD_URL_PREFIX
 from .routers import auth as auth_router, pages as pages_router, qr as qr_router
 
 app = FastAPI(title="sendmemoneyfornoreason")
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, same_site="lax", https_only=False)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount(UPLOAD_URL_PREFIX, StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
 app.include_router(auth_router.router)
 app.include_router(pages_router.router)

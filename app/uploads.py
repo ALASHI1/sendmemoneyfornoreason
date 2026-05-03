@@ -1,13 +1,16 @@
-"""Avatar upload: resize to a square 512px webp, save to app/static/uploads.
+"""Avatar upload: resize to a square 512px webp, save to UPLOAD_DIR.
 
-For prod on Fly, mount a volume at /app/app/static/uploads so uploads survive restarts.
+Set UPLOAD_DIR (and optionally UPLOAD_URL_PREFIX) to point at a persistent
+location. On Fly, mount a volume at /data and set UPLOAD_DIR=/data/uploads.
 """
 import io
+import os
 import secrets
 from pathlib import Path
 from PIL import Image, ImageOps
 
-UPLOAD_DIR = Path("app/static/uploads")
+UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "app/static/uploads"))
+UPLOAD_URL_PREFIX = os.getenv("UPLOAD_URL_PREFIX", "/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 MAX_BYTES = 5 * 1024 * 1024  # 5 MB
@@ -25,4 +28,4 @@ def save_avatar(file_bytes: bytes, content_type: str) -> str:
     name = f"{secrets.token_hex(12)}.webp"
     path = UPLOAD_DIR / name
     img.save(path, "WEBP", quality=85, method=6)
-    return f"/static/uploads/{name}"
+    return f"{UPLOAD_URL_PREFIX.rstrip('/')}/{name}"
