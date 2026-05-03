@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}edit · send money{% endblock %}
+{% block content %}
+<section class="max-w-2xl mx-auto">
+  <div class="flex items-center gap-5">
+    <img class="w-20 h-20 rounded-full object-cover bg-ink-100" src="{{ user.picture_url or 'https://api.dicebear.com/9.x/thumbs/svg?seed=' ~ user.slug }}" alt="" />
+    <div class="min-w-0">
+      <h1 class="text-2xl font-semibold tracking-tight">{{ user.name or user.email }}</h1>
+      <p class="text-sm text-ink-500">your public page: <a class="text-money-dark hover:underline" href="/u/{{ user.slug }}">/u/{{ user.slug }}</a></p>
+    </div>
+  </div>
+
+  <div class="mt-8 rounded-2xl bg-white border border-ink-100 shadow-soft p-5">
+    <h2 class="font-semibold mb-4">profile</h2>
+    <form method="post" action="/me/profile" enctype="multipart/form-data" class="flex flex-col gap-4">
+      <label class="block">
+        <span class="text-sm text-ink-500">display name</span>
+        <input class="mt-1 w-full px-3 py-2 rounded-lg border border-ink-100 bg-white focus:outline-none focus:ring-2 focus:ring-money/30" name="name" type="text" value="{{ user.name }}" />
+      </label>
+      <label class="block">
+        <span class="text-sm text-ink-500">profile picture</span>
+        <input class="mt-1 w-full text-sm file:mr-3 file:px-3 file:py-1.5 file:rounded-full file:border-0 file:bg-money-soft file:text-money-dark file:font-medium hover:file:bg-money/20 cursor-pointer" name="picture" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+        <span class="text-xs text-ink-500 mt-1 block">png/jpg/webp/gif · max 5MB · resized to 512×512</span>
+      </label>
+      <button class="self-start px-5 py-2 rounded-full bg-money text-white font-medium hover:bg-money-dark" type="submit">save</button>
+    </form>
+  </div>
+
+  <div class="mt-8 rounded-2xl bg-white border border-ink-100 shadow-soft p-5">
+    <h2 class="font-semibold mb-4">payment methods</h2>
+    <ul class="flex flex-col gap-2">
+      {% for l in links %}
+      {% set ic = kind_icon(l.kind, l.meta) %}
+      <li class="flex items-center gap-3 p-3 rounded-xl border border-ink-100">
+        {% if ic.type == 'img' %}
+          <img class="w-7 h-7 shrink-0" src="{{ ic.value }}" alt="{{ KINDS[l.kind].label }}" />
+        {% elif ic.type == 'pill' %}
+          <span class="shrink-0 px-2 py-0.5 rounded text-[10px] font-bold tracking-wide" style="background:{{ ic.bg }};color:{{ ic.fg }}">{{ ic.text }}</span>
+        {% else %}
+          <span class="w-7 h-7 inline-flex items-center justify-center text-ink-700 shrink-0">{{ ic.value | safe }}</span>
+        {% endif %}
+        <div class="flex-1 min-w-0">
+          <div class="font-medium">{{ KINDS[l.kind].label }}</div>
+          <div class="text-sm text-ink-500 truncate font-mono">{{ link_summary(l.kind, l.meta) }}</div>
+        </div>
+        <form method="post" action="/me/links/{{ l.id }}/delete" onsubmit="return confirm('delete this?')">
+          <button class="px-3 py-1.5 rounded-full border border-ink-100 text-sm hover:bg-ink-100" type="submit">delete</button>
+        </form>
+      </li>
+      {% else %}
+      <li class="text-ink-500 text-sm">nothing yet — add one below.</li>
+      {% endfor %}
+    </ul>
+
+    <h3 class="font-semibold mt-6 mb-3">add a method</h3>
+    <form method="post" action="/me/links" class="flex flex-col gap-3" id="add-link-form">
+      <label class="block">
+        <span class="text-sm text-ink-500">type</span>
+        <select id="kind-select" class="mt-1 w-full px-3 py-2 rounded-lg border border-ink-100 bg-white" name="kind" required>
+          {% for k, v in KINDS.items() %}
+            <option value="{{ k }}">{{ v.label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      {% for k, v in KINDS.items() %}
+        <fieldset class="kind-fields hidden flex flex-col gap-3 border-t border-ink-100 pt-3" data-kind="{{ k }}">
+          {% for f in v.fields %}
+            <label class="block">
+              <span class="text-sm text-ink-500">{{ f.label }}{% if f.required %} <span class="text-money-dark">*</span>{% endif %}</span>
+              {% if f.type == 'select' %}
+                <select name="{{ k }}__{{ f.name }}" class="mt-1 w-full px-3 py-2 rounded-lg border border-ink-100 bg-white">
+                  {% for ov, ol in f.options %}<option value="{{ ov }}">{{ ol }}</option>{% endfor %}
+                </select>
+              {% else %}
+                <input
+                  name="{{ k }}__{{ f.name }}"
+                  type="{{ f.type or 'text' }}"
+                  placeholder="{{ f.placeholder or '' }}"
+                  class="mt-1 w-full px-3 py-2 rounded-lg border border-ink-100 bg-white focus:outline-none focus:ring-2 focus:ring-money/30" />
+              {% endif %}
+            </label>
+          {% endfor %}
+        </fieldset>
+      {% endfor %}
+
+      <button class="self-start px-5 py-2 rounded-full bg-money text-white font-medium hover:bg-money-dark" type="submit">add</button>
+    </form>
+  </div>
+</section>
+
+<script>
+(function () {
+  const sel = document.getElementById('kind-select');
+  const sets = document.querySelectorAll('.kind-fields');
+  function refresh() {
+    const k = sel.value;
+    sets.forEach(fs => {
+      const active = fs.dataset.kind === k;
+      fs.classList.toggle('hidden', !active);
+      fs.querySelectorAll('input, select').forEach(el => { el.disabled = !active; });
+    });
+  }
+  sel.addEventListener('change', refresh);
+  refresh();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="text-center py-10 sm:py-14">
+  <h1 class="text-4xl sm:text-5xl font-semibold tracking-tight">Send Money To Someone For No Reason</h1>
+  <p class="mt-4 text-ink-500 max-w-xl mx-auto">Pick Some one and send them money for no reason at all.</p>
+  {% if not user %}
+  <a class="inline-flex items-center gap-2 mt-6 px-5 py-2.5 rounded-full bg-money text-white font-medium hover:bg-money-dark transition" href="/login">
+    get your page <span aria-hidden>→</span>
+  </a>
+  {% endif %}
+</section>
+
+<h2 class="text-xs uppercase tracking-[0.18em] text-ink-500 mt-8 mb-3">people you can send to</h2>
+<div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+  {% for c in cards %}
+  <a class="group flex items-center gap-4 p-4 rounded-2xl bg-white border border-ink-100 shadow-soft hover:-translate-y-0.5 hover:shadow-md transition" href="/u/{{ c.user.slug }}">
+    <img class="w-14 h-14 rounded-full object-cover bg-ink-100 shrink-0" src="{{ c.user.picture_url or 'https://api.dicebear.com/9.x/thumbs/svg?seed=' ~ c.user.slug }}" alt="" />
+    <div class="min-w-0 flex-1">
+      <div class="font-medium truncate">{{ c.user.name }}</div>
+      <div class="flex flex-wrap items-center gap-2 mt-1.5">
+        {% for l in c.links[:6] %}
+          {% set ic = kind_icon(l.kind, l.meta) %}
+          {% if ic.type == 'img' %}
+            <img class="w-5 h-5" src="{{ ic.value }}" alt="{{ KINDS[l.kind].label }}" title="{{ KINDS[l.kind].label }}" loading="lazy" />
+          {% elif ic.type == 'pill' %}
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wide" style="background:{{ ic.bg }};color:{{ ic.fg }}" title="{{ KINDS[l.kind].label }}">{{ ic.text }}</span>
+          {% else %}
+            <span class="w-5 h-5 inline-flex items-center justify-center text-ink-700" title="{{ KINDS[l.kind].label }}">{{ ic.value | safe }}</span>
+          {% endif %}
+        {% endfor %}
+        {% if c.links|length > 6 %}<span class="text-xs text-ink-500">+{{ c.links|length - 6 }}</span>{% endif %}
+      </div>
+    </div>
+  </a>
+  {% else %}
+  <p class="text-ink-500 col-span-full">nobody here yet. be the first.</p>
+  {% endfor %}
+</div>
+{% endblock %}

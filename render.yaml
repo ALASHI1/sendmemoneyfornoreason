@@ -1,0 +1,22 @@
+# Render.com one-click deploy.
+# Free DB: create a Neon Postgres free project and paste its URL into DATABASE_URL.
+services:
+  - type: web
+    name: sendmemoneyfornoreason
+    runtime: docker
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /healthz
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false       # set to your Neon/Supabase Postgres URL
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: BASE_URL
+        sync: false       # e.g. https://sendmemoneyfornoreason.com
+      - key: DEV_FAKE_LOGIN
+        value: "0"

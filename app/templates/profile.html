@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}{{ target.name }} · send money{% endblock %}
+{% block content %}
+<section class="max-w-xl mx-auto text-center">
+  <img class="w-32 h-32 mx-auto rounded-full object-cover bg-ink-100 ring-4 ring-white shadow-soft" src="{{ target.picture_url or 'https://api.dicebear.com/9.x/thumbs/svg?seed=' ~ target.slug }}" alt="" />
+  <h1 class="text-3xl font-semibold tracking-tight mt-4">{{ target.name }}</h1>
+  <p class="text-ink-500 mt-1 text-sm">send money. for no reason.</p>
+
+  <div class="mt-8 flex flex-col gap-3 text-left">
+    {% for l in links %}
+      {% set k = KINDS[l.kind] %}
+      {% set m = l.meta %}
+      {% set url = pay_url(l.kind, m) %}
+      {% set qr = qr_data(l.kind, m) %}
+      {% set ic = kind_icon(l.kind, m) %}
+      <div class="rounded-2xl bg-white border border-ink-100 shadow-soft p-4">
+        <div class="flex items-center gap-2 mb-3">
+          {% if ic.type == 'img' %}
+            <img class="w-6 h-6" src="{{ ic.value }}" alt="" />
+          {% elif ic.type == 'pill' %}
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wide" style="background:{{ ic.bg }};color:{{ ic.fg }}">{{ ic.text }}</span>
+          {% else %}
+            <span class="w-6 h-6 inline-flex items-center justify-center text-ink-700">{{ ic.value | safe }}</span>
+          {% endif %}
+          <strong class="text-sm">{{ k.label }}</strong>
+          <span class="text-xs text-ink-500 ml-auto truncate">{{ link_summary(l.kind, m) }}</span>
+        </div>
+
+        {# ----- url renderer (stripe / paystack / custom) ----- #}
+        {% if k.renderer == 'url' %}
+          <div class="flex flex-wrap items-center gap-2">
+            <a class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-money text-white font-medium hover:bg-money-dark" href="{{ url }}" target="_blank" rel="noopener">
+              {% if l.kind == 'stripe' or l.kind == 'paystack' %}Pay with card{% else %}Open link{% endif %} ↗
+            </a>
+            <button class="copy inline-flex items-center px-4 py-2 rounded-full border border-ink-100 hover:bg-ink-100 text-sm" data-copy="{{ url }}">copy link</button>
+          </div>
+
+        {# ----- handle renderer (cashapp / venmo / paypal / kofi / bmc) ----- #}
+        {% elif k.renderer == 'handle' %}
+          <div class="flex flex-wrap items-center gap-2">
+            <a class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-money text-white font-medium hover:bg-money-dark" href="{{ url }}" target="_blank" rel="noopener">
+              Pay on {{ k.label }} ↗
+            </a>
+            <button class="copy inline-flex items-center px-4 py-2 rounded-full border border-ink-100 hover:bg-ink-100 text-sm" data-copy="{{ url }}">copy link</button>
+          </div>
+
+        {# ----- copy renderer (zelle) ----- #}
+        {% elif k.renderer == 'copy' %}
+          <p class="text-xs text-ink-500 mb-2">{{ k.label }} doesn't have a payment URL — open your bank app and pay this contact.</p>
+          <div class="flex flex-wrap items-center gap-2">
+            <code class="px-3 py-2 rounded-lg bg-ink-100/60 font-mono text-sm">{{ m.contact }}</code>
+            <button class="copy inline-flex items-center px-4 py-2 rounded-full border border-ink-100 hover:bg-ink-100 text-sm" data-copy="{{ m.contact }}">copy</button>
+            <button class="qr-toggle inline-flex items-center px-4 py-2 rounded-full border border-ink-100 hover:bg-ink-100 text-sm">show QR</button>
+          </div>
+          <img class="qr hidden mt-3 w-44 h-44" alt="QR" data-src="/qr.png?data={{ qr | urlencode }}" />
+
+        {# ----- crypto renderer ----- #}
+        {% elif k.renderer == 'crypto' %}
+          <div class="flex flex-col sm:flex-row gap-4 items-start">
+            <img class="w-40 h-40 rounded-lg border border-ink-100 bg-white" src="/qr.png?data={{ (qr or m.address) | urlencode }}" alt="wallet QR" />
+            <div class="flex-1 min-w-0">
+              <div class="text-xs uppercase tracking-wider text-ink-500">{{ m.network|upper }} · {{ m.asset or '' }}</div>
+              <pre class="mt-1 whitespace-pre-wrap break-all font-mono text-sm bg-ink-100/60 rounded-lg p-3">{{ m.address }}</pre>
+              <div class="mt-2 flex flex-wrap gap-2">
+                {% if url %}
+                  <a class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-money text-white font-medium hover:bg-money-dark" href="{{ url }}">Open in wallet ↗</a>
+                {% endif %}
+                <button class="copy inline-flex items-center px-4 py-2 rounded-full border border-ink-100 hover:bg-ink-100 text-sm" data-copy="{{ m.address }}">copy address</button>
+              </div>
+            </div>
+          </div>
+
+        {# ----- bank renderer (structured fields) ----- #}
+        {% elif k.renderer == 'bank' %}
+          <dl class="grid grid-cols-1 sm:grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm">
+            {% for f in k.fields %}{% if m.get(f.name) %}
+              <dt class="text-ink-500">{{ f.label }}</dt>
+              <dd class="font-mono break-all flex items-center gap-2">
+                <span>{{ m[f.name] }}</span>
+                <button class="copy text-xs px-2 py-0.5 rounded-full border border-ink-100 hover:bg-ink-100" data-copy="{{ m[f.name] }}">copy</button>
+              </dd>
+            {% endif %}{% endfor %}
+          </dl>
+        {% endif %}
+      </div>
+    {% else %}
+      <p class="text-ink-500 text-center">no payment methods yet.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<script>
+document.querySelectorAll('.copy').forEach(btn => {
+  btn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    await navigator.clipboard.writeText(btn.dataset.copy);
+    const old = btn.textContent;
+    btn.textContent = 'copied ✓';
+    setTimeout(() => btn.textContent = old, 1200);
+  });
+});
+document.querySelectorAll('.qr-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const card = btn.closest('div').parentElement;
+    const img = card.querySelector('.qr');
+    if (!img.src && img.dataset.src) img.src = img.dataset.src;
+    img.classList.toggle('hidden');
+    btn.textContent = img.classList.contains('hidden') ? 'show QR' : 'hide QR';
+  });
+});
+</script>
+{% endblock %}
